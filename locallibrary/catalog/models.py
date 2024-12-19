@@ -31,12 +31,15 @@ class Book(models.Model):
         return reverse('book_detail', args=[str(self.id)])
     
 import uuid
+from django.contrib.auth.models import User
+from datetime import date
 
 class BookInstance(models.Model): #책을 빌려가면 책의 복사본
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, help_text='Unique whole library')
     book = models.ForeignKey('Book', on_delete=models.SET_NULL, null=True)
     imprint = models.CharField(max_length=200) #출판사
     due_back = models.DateField(null=True, blank=True) #언제 돌려받을지
+    borrower = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
     LOAN_STATUS = ( #대출상태
         ('m', 'Maintenance'),
@@ -65,6 +68,11 @@ class Author(models.Model): #작가모델
     last_name = models.CharField(max_length=100)
     date_of_birth = models.DateField(null=True, blank=True)
     date_of_death = models.DateField('Died', null=True, blank=True)
+
+    #연체 여부를 알려주는 함수
+    @property
+    def is_overdue(self):
+        return bool(self.due_back and date.today() > self.due_back)
 
     #메타 데이터로 이름을 사용
     class Meta:
